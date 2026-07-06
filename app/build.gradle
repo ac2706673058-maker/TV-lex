@@ -1,0 +1,44 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace 'com.lextv.app'
+    compileSdk 34
+    defaultConfig {
+        applicationId "com.lextv.app"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release { minifyEnabled false }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+dependencies {
+    implementation 'net.java.dev.jna:jna:5.13.0@aar'
+    implementation 'com.alphacephei:vosk-android:0.3.47'
+}
+
+task fetchVoskModel {
+    doLast {
+        def models = [["model-en", "vosk-model-small-en-us-0.15"], ["model-cn", "vosk-model-small-cn-0.22"]]
+        models.each { pair ->
+            def dir = file("src/main/assets/" + pair[0])
+            if (!dir.exists()) {
+                def zip = new File(buildDir, pair[1] + ".zip")
+                zip.parentFile.mkdirs()
+                new URL("https://alphacephei.com/vosk/models/" + pair[1] + ".zip").withInputStream { i -> zip.withOutputStream { o -> o << i } }
+                copy { from zipTree(zip); into file("src/main/assets") }
+                file("src/main/assets/" + pair[1]).renameTo(dir)
+            }
+        }
+    }
+}
+preBuild.dependsOn fetchVoskModel
