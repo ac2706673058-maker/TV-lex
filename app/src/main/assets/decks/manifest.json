@@ -1,0 +1,5 @@
+{"decks":[
+{"id":"news","name":"新闻核心","icon":"📰","files":["news1.json","news2.json","news3.json","news4.json","news5.json","news6.json"]},
+{"id":"tech","name":"科技媒体","icon":"🤖","files":["tech1.json","tech2.json"]},
+{"id":"bank","name":"银行证券App","icon":"🏦","files":["bank1.json"]}
+]}
