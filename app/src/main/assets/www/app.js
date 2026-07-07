@@ -1,6 +1,8 @@
 /* ================= LexTV 词境 ================= */
 "use strict";
-const $ = id => document.getElementById(id);
+function _dummyEl() { return document.createElement("div"); }
+const $ = id => document.getElementById(id) || _dummyEl();
+window.onerror = function (msg, src, line) { try { toast("程序错误:" + msg + " @" + line); } catch (e) { } return true; };
 const NOW = () => Date.now();
 const DAY = 86400000;
 const todayStr = (t) => { const d = new Date(t || NOW()); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
@@ -151,7 +153,8 @@ function show(name) {
   document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
   $(name).classList.add("active");
   SCREEN = name;
-  if (handlers[name] && handlers[name].enter) handlers[name].enter();
+  try { if (handlers[name] && handlers[name].enter) handlers[name].enter(); }
+  catch (e) { toast("界面错误:" + (e && e.message)); }
 }
 window.onTvKey = k => { try { $("toast").classList.remove("show"); } catch (e) { } const h = handlers[SCREEN]; if (h && h.key) h.key(k); };
 document.addEventListener("keydown", e => {
@@ -865,14 +868,19 @@ handlers.ai = {
       if (k === "MENU" || k === "PLAY") { if (AIS.say) speak(AIS.say); return; }
       if (VC.on) { if (k === "BACK") { cancelVoice(); $("ai-fb").textContent = ""; } return; }
       if (AIS.busy) return;
-      const n = AIS.replies.length + (hasVoice ? 2 : 0);
+      const n = AIS.replies.length + aiActs().length;
       if (k === "UP") AIS.sel = (AIS.sel + n - 1) % Math.max(1, n);
       else if (k === "DOWN") AIS.sel = (AIS.sel + 1) % Math.max(1, n);
       else if (k === "OK") {
         if (!n) return;
-        if (hasVoice && AIS.sel === 0) { startVoice("en"); return; }
-        if (hasVoice && AIS.sel === 1) { startVoice("cn"); return; }
-        const r = AIS.replies[AIS.sel - (hasVoice ? 2 : 0)];
+        const acts = aiActs();
+        if (AIS.sel < acts.length) {
+          const t = acts[AIS.sel].t;
+          if (t === "replay") { if (AIS.say) speak(AIS.say); }
+          else startVoice(t);
+          return;
+        }
+        const r = AIS.replies[AIS.sel - acts.length];
         if (!r) return;
         AIS.msgs.push({ role: "user", content: r });
         aiTurn();
@@ -935,14 +943,20 @@ function aiTurn() {
     speak(j.say);
   });
 }
+function aiActs() {
+  const a = hasVoice ? [{ t: "en", l: "\ud83c\udfa4 按OK后对电视说英语" }, { t: "cn", l: "\ud83c\udfa4 按OK后对电视说中文" }] : [];
+  a.push({ t: "replay", l: "\ud83d\udd0a 再听一遍AI说的" });
+  return a;
+}
 function drawAiReplies() {
   if (AIS._retry) return;
   const box = $("ai-opts"); box.innerHTML = "";
-  const items = hasVoice ? ["\ud83c\udfa4 \u8bf4\u82f1\u8bed\u56de\u7b54", "\ud83c\udfa4 \u8bf4\u4e2d\u6587\u4ea4\u6d41"].concat(AIS.replies) : AIS.replies;
+  const acts = aiActs();
+  const items = acts.map(a => a.l).concat(AIS.replies);
   items.forEach((r, i) => {
     const d = document.createElement("div");
     d.className = "opt" + (i === AIS.sel ? " focus" : "");
-    d.innerHTML = '<span class="idx">' + (hasVoice && i < 2 ? "\ud83c\udfa4" : (hasVoice ? i - 1 : i + 1)) + '</span><span>' + esc(r) + '</span>';
+    d.innerHTML = '<span class="idx">' + (i < acts.length ? "✦" : (i - acts.length + 1)) + '</span><span>' + esc(r) + '</span>';
     box.appendChild(d);
   });
 }
@@ -997,9 +1011,15 @@ function aiExplain(e) {
   }, 400);
 }
 const _brKeyOrig = handlers.browse.key;
+let _brLastOk = 0;
 handlers.browse.key = function (k) {
   if (popOpen) { popOpen = false; $("ai-pop").classList.remove("show"); return; }
   if (k === "MENU" && BR.list[BR.idx]) { aiExplain(BR.list[BR.idx]); return; }
+  if (k === "OK") {
+    const now = NOW();
+    if (now - _brLastOk < 900 && BR.list[BR.idx]) { _brLastOk = 0; aiExplain(BR.list[BR.idx]); return; }
+    _brLastOk = now;
+  }
   _brKeyOrig(k);
 };
 

@@ -92,7 +92,8 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             KeyEvent.KEYCODE_DPAD_RIGHT -> sendKey("RIGHT")
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER, KeyEvent.KEYCODE_NUMPAD_ENTER -> sendKey("OK")
             KeyEvent.KEYCODE_BACK -> sendKey("BACK")
-            KeyEvent.KEYCODE_MENU -> sendKey("MENU")
+            KeyEvent.KEYCODE_MENU, KeyEvent.KEYCODE_SETTINGS, KeyEvent.KEYCODE_INFO,
+            KeyEvent.KEYCODE_GUIDE, KeyEvent.KEYCODE_BOOKMARK -> sendKey("MENU")
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY -> sendKey("PLAY")
             else -> super.onKeyDown(keyCode, event)
         }
