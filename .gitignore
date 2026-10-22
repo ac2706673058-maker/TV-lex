@@ -1,0 +1,12 @@
+
+
+# Local credentials and signing keys
+.env
+.env.*
+!.env.example
+keystore.properties
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem

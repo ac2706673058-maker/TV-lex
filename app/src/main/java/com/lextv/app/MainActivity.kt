@@ -236,10 +236,13 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             Thread {
                 var out = "{}"
                 try {
+                    // Provider credentials belong on a backend, not in the APK.
+                    val apiKey = ""
+                    check(apiKey.isNotBlank()) { "AI 服务暂不可用" }
                     val c = URL("https://open.bigmodel.cn/api/paas/v4/chat/completions").openConnection() as HttpURLConnection
                     c.requestMethod = "POST"
                     c.setRequestProperty("Content-Type", "application/json")
-                    c.setRequestProperty("Authorization", "Bearer ")
+                    c.setRequestProperty("Authorization", "Bearer $apiKey")
                     c.doOutput = true; c.connectTimeout = 15000; c.readTimeout = 30000
                     c.outputStream.use { it.write(payload.toByteArray(Charsets.UTF_8)) }
                     val st = if (c.responseCode in 200..299) c.inputStream else c.errorStream
